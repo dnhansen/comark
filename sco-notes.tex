@@ -114,6 +114,15 @@
 
 \usepackage{booktabs}
 
+
+% https://tex.stackexchange.com/questions/167/how-to-cross-reference-items-in-description-lists
+\newcounter{desccount}
+\newcommand{\descitem}[2]{%
+  \item[#1] \refstepcounter{desccount}\label{#2}
+}
+\newcommand{\descref}[2]{\hyperref[#1]{#2}}
+
+
 \begin{document}
 
 \maketitle
@@ -181,7 +190,7 @@ Furthermore, since the computer essentially does calculations modulo $2^n$, arit
 \item[$+V_{\mathrm{cc}}$]
 The subscript stands for \enquote{common collector}, and the sign indicates that the voltage is positive. Voltage is measured with respect to ground, i.e. the voltage of ground is \SI{0}{\volt}.
 
-\item[Current in $\neq$ current out]
+\item[Current in $\neq$ current out]\refstepcounter{desccount}\label{note:current-in-out} % TODO: Better references
 It is easy to look at symbols representing gates (e.g. Figure~3-2) and think that the current that enters a gate as an input signal is the same current (i.e. the same electrons) that leaves the gate as the output signal. A moment's thought reveals that this cannot be so: For an input $0$ corresponds (in the positive logic, cf.~§3.1.4) to no signal at all, so where would the electrons in the output $1$ of a \gateNOT{} gate come from?
 
 Looking e.g. at Figure~3-1(a), we see that each gate is provided with an external power source (here labelled $+V_{\mathrm{cc}}$), and it is the current drawn from this source that leaves the gate as an output. (At least this is the case for gates constructed from bipolar transistors.)
@@ -202,7 +211,7 @@ Also notice that the signal \textsc{inc} is given as the carry in of the first $
 
 \begin{notelist}
 \item[Latches]
-It may be difficult to wrap one's head around how the circuit in Figure~3-21 is supposed to work. If this is so, then the confusion may stem from the same misconception about gates as above: The signal $1$ leaving the topmost \gateNOR{} gate in Figure~3-21(a) is provided by an external power source. In other words, there are no electrons \enquote{going round in circles} or anything of the sort.
+It may be difficult to wrap one's head around how the circuit in Figure~3-21 is supposed to work. If this is so, then the confusion may stem from the same misconception about gates as \descref{note:current-in-out}{above}: The signal $1$ leaving the topmost \gateNOR{} gate in Figure~3-21(a) is provided by an external power source. In other words, there are no electrons \enquote{going round in circles} or anything of the sort.
 
 \item[Usefulness of D latches]
 The D latch has an obvious advantage over the SR latch, in that it is not possible to give it the input $S = R = 1$. But we might wonder if the D latch can actually function as proper memory as a result of this restriction: If we want to store the value $Q = 1$ across multiple clock cycles, then we need to supply the input $D = 1$ continually, or at right before the falling edge of each clock cycle. But then we might as well just use the input $D$ instead, so the D latch is not appropriate in this situation.
@@ -239,6 +248,47 @@ Notice also that each flip-flop outputs its state continuously, and that the con
 \section{An Example Microarchitecture}
 
 \begin{notelist}
+\item[Binary units]
+~
+
+\begin{tabular}{>{$}l<{$}ll>{$}l<{$}llll}
+    \toprule
+    \multicolumn{3}{c}{Decimal} & \multicolumn{5}{c}{Binary} \\
+    \cmidrule(r){1-3} \cmidrule(l){4-8}
+    \multicolumn{1}{c}{Value~~~} & \multicolumn{2}{c}{SI} & \multicolumn{1}{c}{Value} & \multicolumn{2}{c}{IEC} & \multicolumn{2}{c}{~~Legacy} \\
+    \cmidrule(r){1-1} \cmidrule(lr){2-3} \cmidrule(lr){4-4} \cmidrule(lr){5-6} \cmidrule(l){7-8}
+    1000 & k & kilo & 1024 & Ki & kibi & K & kilo \\
+    1000^2 & M & mega & 1024^2 & Mi & mebi & M & mega \\
+    1000^3 & G & giga & 1024^3 & Gi & gibi & G & giga \\
+    1000^4 & T & tera & 1024^4 & Ti & tebi & T & tera \\
+    1000^5 & P & peta & 1024^5 & Pi & pebi & -- & -- \\
+    1000^6 & E & exa & 1024^6 & Ei & exbi & -- & -- \\
+    1000^7 & Z & zetta & 1024^7 & Zi & zebi & -- & -- \\
+    1000^8 & Y & yotta & 1024^8 & Yi & yobi & -- & -- \\
+    \bottomrule
+\end{tabular}
+% https://tex.stackexchange.com/questions/128736/table-spacing-multi-column
+% https://en.wikipedia.org/wiki/Binary_prefix
+
+\item[Words and addressing]
+The \emph{word size} of an architecture is the number of bits that the CPU can process at one time. A \emph{word} is a \enquote{word size}-bit number, and these are handled as a unit by the instruction set or the hardware. The registers of the processor are usually word-sized, and words are often the largest data that can be transferred to and from memory in a single instruction. The Mic-1 is a 32-bit architecture since its registers contain 32 bits, and it can read and write 32-bit strings to and from memory.
+
+When we read to and write from memory, we must distinguish between the address of a piece of memory and its contents. An \emph{address} is just a number, of course represented as a binary string in practice, which uniquely identifies some portion of memory. The number of addresses is usually bounded by the word size, since we want the ability to store a single address in a register. That is, since there are $2^n$ different $n$-bit numbers, if the word size is $n$ then there are $2^n$ possible addresses.
+
+In contrast, each address must identify some portion of memory with some size. If each address identifies a byte, then we say that the computer is \emph{byte-addressable}. If each address identifies a word, then we say that the computer is \emph{word-addressable}. Most modern computers are byte-addressable. Since words are [TODO: always?] larger than bytes, this puts a limit on the size of addressable memory. For instance, if we require that a machine with word size of $32$ be byte-addressable, then the $2^{32}$ different addresses can point to $2^{32}$ individual bytes, in total
+%
+\begin{equation*}
+    \SI[exponent-base=2]{e32}{bytes}
+        = 4 \cdot \SI[exponent-base=2]{e30}{bytes}
+        = \SI{4}{GB},
+\end{equation*}
+%
+or more properly \SI{4}{GiB}. This helps explain why 32-bit computers only support \SI{4}{GB} of memory. On the other hand, being able to address smaller units of memory makes it easier to work with small items of data. For instance, we often want to store distinct units (like numbers) at different addresses, but if the numbers are much smaller than the \emph{minimal addressable unit} (MAU), then there might be a lot of wasted space.
+
+Note however also that the MAU is a property of a specific memory \emph{abstraction}. For example, the Mic-1 microarchitecture has a 32-bit, word-addressable port, controlled by the \reg{MAR} and \reg{MDR} registers. These are not able to address units smaller than (32-bit) words, even though they access the same underlying memory.
+
+% https://en.wikipedia.org/wiki/Word_addressing
+
 \item[Registers in Mic-1 data path]
 ~
 %
@@ -255,11 +305,13 @@ Notice also that each flip-flop outputs its state continuously, and that the con
     \item \reg{H}: Holding register
 \end{itemize}
 
-\item[The registers \reg{N} and \reg{Z}]
+\item[The flags \reg{N} and \reg{Z}]
 Each clock cycle, the ALU performs some operation (whether we ask it to or not). The sign bit (i.e. the most significant bit) of the result is then set as the status flag \reg{N}. In other words, \reg{N} is set to 1 just if the result is negative. It is also checked whether the result is zero, and if so we set the status flag \reg{Z} to 1. These status flags are then stored in registers of the same names, as described below.
 
+Compare the \reg{FLAGS} register of the x86 architecture.
+
 \item[Data path cycles]
-We elaborate on what happens during a single data path cycle. Before the cycle begins, we assume that the \reg{MPC} register has been loaded with the correct address, and that the input to and output from the control store is stable. The cycle then begins on the falling edge of the clock, and we can think of it as composed of four subcycles:
+We elaborate on what happens during a single data path cycle. Before the cycle begins, we assume that the \reg{MPC} register has been loaded with the correct address, and that the input to and output from the control store is stable (we will see later how this happens). The cycle then begins on the falling edge of the clock, and we can think of it as composed of four subcycles:
 %
 \begin{enumerate}
     \item The contents of the control store at the address stored in \reg{MPC} are read into the \reg{MIR} register.
@@ -553,6 +605,52 @@ However, this will \emph{not} have the same behaviour as keeping the statements 
 
 As a side-note, there might be situations where we want to use the result of the same ALU operation (that is, the same type of operation with the same input values) to decide whether to branch multiple times in a row. For instance, we might want to branch one if the result is negative vs. nonnegative, and then branch another way if the same result is zero vs. nonzero. Thus it might be tempting to reuse the same computation in both branches. But not only is that not possible, it also wouldn't make the program any more efficient: For given the microarchitecture, we are only able to choose between two addresses when branching, so if we wish to jump between more than two addresses, then we need multiple instructions. But in every data cycle we perform an ALU operation anyway, so we might as well perform the same operation multiple times in a row. In other words, the control unit has to wait for the ALU anyway.
 
+\end{notelist}
+
+
+\appendix
+
+\chapter{Notes on C}
+
+% http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1548.pdf
+
+\begin{notelist}
+\item[The C type system]
+In C, \emph{variables} have types but \emph{values} do not. When a variable is declared, for instance by writing
+%
+\begin{displayquote}
+    \lstinline{int n;}
+\end{displayquote}
+%
+then memory is allocated on the stack for a variable of appropriate size. But the bits located in memory at this location does not contain information about the \emph{type} of information stored there, nor is this information stored anywhere else. In particular there is no way to check the type of a variable at runtime, types are only available at compile-time.
+
+Note that a pointer is not just a pointer, it is a pointer \emph{to something}.
+
+\item[Function prototypes]
+Depending on the compiler, you might be able to call a function before it is declared, but the compiler is required by the C11 [TODO: Or is it C99?] standard to complain in some way that this is happening. So why not just declare (and simultaneously define) every function before it is used? Sometimes this is not possible, for instance if two functions are mutually recursive.
+
+The solution is to use \emph{function prototypes}, which is a declaration of the function's return and argument types. If this is placed at the top of the file, the functions can be used when later \emph{defining} each function. Function prototypes are recommended whether or not they are strictly necessary.
+
+\item[Argument promotion]
+Arguments to a function with a prototype are implicitly converted to the types of the corresponding parameters. If the function does not have a prototype, the \emph{default argument promotions} are used, in which expressions of type \inlinecode{char} or \inlinecode{short int} are automatically promoted to \inlinecode{int}.
+
+\item[Variadic functions]
+Some functions take a variable number of arguments, for instance \inlinecode{printf}. These are usually called \emph{variadic} functions, though this terminology is not found in the C11 standard. According to \emph{\href{https://www.gnu.org/software/libc/manual/html_node/Variadic-Prototypes.html}{The GNU C Library Reference Manual}}, a variadic function must be declared with a prototype that says that it is variadic, which is done with an ellipsis \inlinecode{...} appearing last in the parameter list, following at least one named parameter. Arguments corresponding to the ellipsis seem to be referred to as \emph{variadic arguments}, but this also does not seem to be an official term.
+
+Arguments corresponding to the named parameters of a variadic function (which has a prototype) are implicitly converted as with non-variadic functions, and the variadic arguments undergo default argument promotion (C11, 6.5.2.2, p. 7).
+
+\item[The function \texttt{sizeof}]
+The function \inlinecode{sizeof} has the return type \inlinecode{size_t}, which is specifically used to represent the size of objects. It is guaranteed to be large enough to contain the size of the largest object the system can handle.
+
+If we wish to print a value of type \inlinecode{size_t}, we therefore use the length modifier \inlinecode{z} along with the conversion specifier \inlinecode{u}, since the value is unsigned. This only works if the compiler supports C99 (which it almost certainly does), but if it doesn't then \inlinecode{lu} also works. The compiler won't complain, but it is probably good style to explicitly cast to \inlinecode{unsigned long} before printing. (Actually, on some systems it might be necessary to use \inlinecode{llu}, if an \inlinecode{unsigned long} is not big enough to represent the largest object for the given environment.)
+
+\item[Printing pointers]
+Note that the conversion specifier \inlinecode{p} expects a value of type \inlinecode{void*} (see C11, 7.21.6.1, p. 8). Strictly speaking, giving as argument to \inlinecode{printf} another type of pointer, e.g. \inlinecode{int*}, results in undefined behaviour, and hence is implementation-dependent. A warning is produced if compiled with the flag \inlinecode{-Wpedantic}. So, again strictly speaking, casting to \inlinecode{void*} is required but it is not usually necessary in practice. [TODO: Has something to do with POSIX?] (Note, however, that casting to and from \inlinecode{void*} more generally is done implicitly.)
+
+The reason this is necessary is that the C standard does not require that pointer types have the same size or representation.\footnote{What is true is that pointers to \emph{compatible} types have the same representation, see C11, 6.2.5 p. 28.} In practice a \inlinecode{void*} and an \inlinecode{int*} have the same size (for instance 64 bits on a 64-bit machine) and are represented in the same way, but the standard does require this, and there is no guarantee that this will not change in the future. And even if they were practically identical, there is no guarantee that the compiler will treat them the same.
+
+\item[Double pointers]
+Since a pointer has a memory address, one can also consider pointers to pointers, denoted by two asterisks \inlinecode{**}. But there is nothing special about these objects, they are just pointers to a type that happens to itself be a pointer type.
 \end{notelist}
 
 \end{document}
