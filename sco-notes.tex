@@ -278,8 +278,8 @@ When we read to and write from memory, we must distinguish between the address o
 In contrast, each address must identify some portion of memory with some size. If each address identifies a byte, then we say that the computer is \emph{byte-addressable}. If each address identifies a word, then we say that the computer is \emph{word-addressable}. Most modern computers are byte-addressable. Since words are [TODO: always?] larger than bytes, this puts a limit on the size of addressable memory. For instance, if we require that a machine with word size of $32$ be byte-addressable, then the $2^{32}$ different addresses can point to $2^{32}$ individual bytes, in total
 %
 \begin{equation*}
-    \SI[exponent-base=2]{e32}{bytes}
-        = 4 \cdot \SI[exponent-base=2]{e30}{bytes}
+    \SI[parse-numbers=false]{2^{32}}{bytes}
+        = \SI[parse-numbers=false]{4 \cdot 2^{30}}{bytes}
         = \SI{4}{GB},
 \end{equation*}
 %
