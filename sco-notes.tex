@@ -81,6 +81,7 @@
 \newcommand{\gateNOR}{\gate{nor}}
 \newcommand{\gateAND}{\gate{and}}
 \newcommand{\gateOR}{\gate{or}}
+\newcommand{\gateXOR}{\gate{xor}}
 
 \usepackage{siunitx}
 % TODO: Update TeXLive so I can update packages.
@@ -183,9 +184,59 @@ If $a_{n-1} \cdots a_0$ is a string of $n$ bits, then we may view this as the $n
 
 Since the computer only cares about $k$ modulo $2^n$, we as humans are free to interpret the string $a_{n-1} \cdots a_0$ as encoding any number on the form $q 2^n + k$ for any integer $q$ (positive \emph{or} negative). Notice that we can always choose $q$ such that $q 2^n + k$ falls into the interval $[0, 2^n - 1]$. In this case we say that we interpret the string $a_{n-1} \cdots a_0$ as an \emph{unsigned integer}. Of course, two different $n$-bit numbers $k_1$ and $k_2$ might need different values of $q$, say $q_1$ and $q_2$, such that both $q_1 2^n + k_1$ and $q_2 2^n + k_2$ lie in this interval. On the other hand, we can also choose $q$ such that $q 2^n + k$ lies in the interval $[-2^{n-1}, 2^{n-1} - 1]$. In this case we say that we interpret $a_{n-1} \cdots a_0$ as a \emph{signed integer}.
 
-Notice that whether we interpret a binary string as an unsigned or a signed integer has nothing to do with the string per se. It is information \emph{on top of} the information contained in the string. Whether a particular binary string is supposed to represent a signed or unsigned integer is something we either have to keep in mind when looking at the string, or store as extra information about the string, just as we might store that a variable in Java has a certain type.
+Notice that whether we interpret a binary string as an unsigned or a signed integer has nothing to do with the string per se. It is information \emph{on top of} the information contained in the string. Whether a particular binary string is supposed to represent a signed or unsigned integer is something we either have to keep in mind when looking at the string, or store as extra information about the string, just as we might store that an object in Java has a certain type.
 
 Furthermore, since the computer essentially does calculations modulo $2^n$, arithmetic with signed or unsigned integers are performed in the exact same way, i.e. the binary representations should be manipulated in the same way whether we wish to interpret the strings as signed or unsigned integers.
+
+\item[Carry and overflow]
+Consider two $n$-bit binary strings $a_{n-1} \cdots a_0$ and $b_{n-1} \cdots b_0$, and consider what happens when we add these together using an ALU. If the most significant bit has a carry out of 1, then we say that the addition results in a \emph{carry}. This is relevant if we interpret the two binary strings as unsigned integers, since then the result of the addition is \enquote{wrong}. If we instead interpret the strins as signed integers there need not be a problem. After all, the sum of a negative and a positive number might be positive, but for this to happen there must be a carry.
+
+However, signed addition might still be problematic, in that it might result in \emph{overflow}. This happens when we add to binary strings that are both positive as signed integers, but whose sum is a binary string that is negative when interpreted as a signed integer. Similarly, if two negative numbers has a positive sum we talk about \emph{underflow}.
+
+Write $\tilde{a} = (a_{n-2} \cdots a_0)_2$ and $\tilde{b} = (b_{n-2} \cdots b_0)_2$ and let $a = a_{n-1}2^{n-1} + \tilde{a}$ and $b = b_{n-1}2^{n-1} + \tilde{b}$. To be clear, all these numbers are regular positive numbers. If adding $a_{n-1} \cdots a_0$ and $b_{n-1} \cdots b_0$ results in overflow, then this means that $a_{n-1} = b_{n-1} = 0$, but that $\tilde{a} + \tilde{b} \geq 2^{n-1}$. Conversely, assume that $a + b < 2^n$ and that $\tilde{a} + \tilde{b} \geq 2^{n-1}$. If either $a_{n-1}$ or $b_{n-1}$ were $1$, then we would have
+%
+\begin{equation*}
+    2^n
+        > a + b
+        \geq \tilde{a} + \tilde{b} + 2^{n-1}
+        \geq 2^{n-1} + 2^{n-1}
+        = 2^n,
+\end{equation*}
+%
+which is impossible. So we must have $a_{n-1} = b_{n-1} = 0$. On the other hand, since $\tilde{a} + \tilde{b} \geq 2^{n-1}$ the most significant bit of $a + b$ must be $1$. Hence the binary sum of the strings $a_{n-1} \cdots a_0$ and $b_{n-1} \cdots b_0$ is negative as a signed integer, even if both strings are positive as signed integers. Thus we see that overflow happens if and only if $a + b < 2^n$ and $\tilde{a} + \tilde{b} \geq 2^{n-1}$ in the notation above. That is, the sum of $a$ and $b$ is so large that it wraps around and becomes negative, but not so far that it becomes positive again. (Indeed this is impossible, since this would require that $a + b \geq 2^n$, but then either $a_{n-1} \cdots a_0$ or $b_{n-1} \cdots b_0$ must then represent a negative signed integer.)
+
+Next we consider underflow. For this to happen we must have $a_{n-1} = b_{n-1} = 1$, but $\tilde{a} + \tilde{b} < 2^{n-1}$, since otherwise the sum would be negative. Conversely, assume that $a + b \geq 2^n$ and $\tilde{a} + \tilde{b} < 2^{n-1}$. We claim that then $a_{n-1} = b_{n-1} = 1$: At least one of $a_{n-1}$ and $b_{n-1}$ must be $1$, since otherwise
+%
+\begin{equation*}
+    a + b
+        = \tilde{a} + \tilde{b}
+        < 2^{n-1},
+\end{equation*}
+%
+contradicting that $a + b \geq 2^n$. If only one of $a_{n-1}$ and $b_{n-1}$ were $1$, then we would have
+%
+\begin{equation*}
+    a + b
+        = \tilde{a} + \tilde{b} + 2^{n-1}
+        < 2^{n-1} + 2^{n-1}
+        < 2^n,
+\end{equation*}
+%
+again a contradiction. Hence both $a_{n-1} \cdots a_0$ and $b_{n-1} \cdots b_0$ represent negative signed integers. Notice however that
+%
+\begin{equation*}
+    2^n
+        \leq a + b
+        = (2^{n-1} + \tilde{a}) + (2^{n-1} + \tilde{b})
+        = 2^n + \tilde{a} + \tilde{b}
+        < 2^n + 2^{n-1}.
+\end{equation*}
+%
+Subtracting $2^n$ to take the carry into account, the sum is less than $2^{n-1}$, so it is a positive signed integer. In total, the addition of $a_{n-1} \cdots a_0$ and $b_{n-1} \cdots b_0$ results in underflow if and only if $a + b \geq 2^n$ and $\tilde{a} + \tilde{b} < 2^{n-1}$.
+
+Notice that overflow and underflow happen just when there is a carry out in precisely one of the two highest bits: Overflow if the carry happens in the second highest, and underflow in the highest. Hence if we want to know whether an addition has resulted in overflow or underflow, we can simply pass the carry out of the corresponding adders through an \gateXOR{} gate. This does not distinguish between overflow and underflow, but we probably also want to (be able to) check whether there was a carry, which enables us to distinguish between them.
+
+Finally note that some sources do not distinguish between over- and underflow, but instead uses the term \enquote{overflow} to refer to both of these phenomena.
 
 \item[$+V_{\mathrm{cc}}$]
 The subscript stands for \enquote{common collector}, and the sign indicates that the voltage is positive. Voltage is measured with respect to ground, i.e. the voltage of ground is \SI{0}{\volt}.
