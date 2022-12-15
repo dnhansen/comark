@@ -189,7 +189,7 @@ Notice that whether we interpret a binary string as an unsigned or a signed inte
 Furthermore, since the computer essentially does calculations modulo $2^n$, arithmetic with signed or unsigned integers are performed in the exact same way, i.e. the binary representations should be manipulated in the same way whether we wish to interpret the strings as signed or unsigned integers.
 
 \item[Carry and overflow]
-Consider two $n$-bit binary strings $a_{n-1} \cdots a_0$ and $b_{n-1} \cdots b_0$, and consider what happens when we add these together using an ALU. If the most significant bit has a carry out of 1, then we say that the addition results in a \emph{carry}. This is relevant if we interpret the two binary strings as unsigned integers, since then the result of the addition is \enquote{wrong}. If we instead interpret the strins as signed integers there need not be a problem. After all, the sum of a negative and a positive number might be positive, but for this to happen there must be a carry.
+Consider two $n$-bit binary strings $a_{n-1} \cdots a_0$ and $b_{n-1} \cdots b_0$, and consider what happens when we add these together using an ALU. If the most significant bit has a carry out of 1, then we say that the addition results in a \emph{carry}. This is relevant if we interpret the two binary strings as unsigned integers, since then the result of the addition is \enquote{wrong}. If we instead interpret the strings as signed integers there need not be a problem. After all, the sum of a negative and a positive number might be positive, but for this to happen there must be a carry.
 
 However, signed addition might still be problematic, in that it might result in \emph{overflow}. This happens when we add to binary strings that are both positive as signed integers, but whose sum is a binary string that is negative when interpreted as a signed integer. Similarly, if two negative numbers has a positive sum we talk about \emph{underflow}.
 
@@ -236,7 +236,7 @@ Subtracting $2^n$ to take the carry into account, the sum is less than $2^{n-1}$
 
 Notice that overflow and underflow happen just when there is a carry out in precisely one of the two highest bits: Overflow if the carry happens in the second highest, and underflow in the highest. Hence if we want to know whether an addition has resulted in overflow or underflow, we can simply pass the carry out of the corresponding adders through an \gateXOR{} gate. This does not distinguish between overflow and underflow, but we probably also want to (be able to) check whether there was a carry, which enables us to distinguish between them.
 
-Finally note that some sources do not distinguish between over- and underflow, but instead uses the term \enquote{overflow} to refer to both of these phenomena.
+Finally note that some sources do not distinguish between over- and underflow, but instead use the term \enquote{overflow} to refer to both of these phenomena.
 
 \item[$+V_{\mathrm{cc}}$]
 The subscript stands for \enquote{common collector}, and the sign indicates that the voltage is positive. Voltage is measured with respect to ground, i.e. the voltage of ground is \SI{0}{\volt}.
@@ -666,6 +666,11 @@ As a side-note, there might be situations where we want to use the result of the
 % http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1548.pdf
 
 \begin{notelist}
+\item[Memory allocation]
+The memory used by a C program is often said to be divided into two: the \emph{stack}, which is used for local variables and function arguments, and the \emph{heap}\footnote{Note that there is no obvious connection between \emph{the} heap, the place in memory, and \emph{a} heap, the data structure. This is confusing since \emph{the} stack is certainly \emph{a} stack.}, on which we can allocate memory dynamically, perhaps if we wish to store an array larger than can fit on a stack.\footnote{Running \inlinecode{ulimit -a} in a Linux terminal gets user limits, such as the maximum size of a program stack.} However, \emph{nothing} in the C standard requires there to even be a stack or a heap anywhere. In fact, local variables are often placed in registers by optimising compilers instead of being placed on the stack.
+
+In practice, the stack is usually used more or less as in the IJVM memory model: When a function is called, a block of memory is reserved on top of the stack for local variables and other information, and this block is popped when the function returns. In contrast, the heap is indeed usually used for dynamic allocation.
+
 \item[The C type system]
 In C, \emph{variables} have types but \emph{values} do not. When a variable is declared, for instance by writing
 %
@@ -673,7 +678,11 @@ In C, \emph{variables} have types but \emph{values} do not. When a variable is d
     \lstinline{int n;}
 \end{displayquote}
 %
-then memory is allocated on the stack for a variable of appropriate size. But the bits located in memory at this location does not contain information about the \emph{type} of information stored there, nor is this information stored anywhere else. In particular there is no way to check the type of a variable at runtime, types are only available at compile-time.
+then the compiler understands that the name \inlinecode{n} refers to a value of type \inlinecode{int}. The compiler can use this information in the usual ways to ensure that the correct types are given as arguments to functions, to implement random access into arrays, etc.
+
+At some point the variable will likely be associated with some value located either in memory or in a register. But the bits at this location do not contain information about the \emph{type} of information stored there, nor is this information stored anywhere else. In particular there is no way to check the type of a variable at runtime, types are only available at compile-time.
+
+[TODO: Strictly speaking there is, to my understanding, nothing in the standard that prohibits variables from having types at runtime. But then again, the standard of course includes no function to check the type of a variable, so one would need to provide this on top of the functions given in the standard.]
 
 Note that a pointer is not just a pointer, it is a pointer \emph{to something}.
 
@@ -686,7 +695,7 @@ The solution is to use \emph{function prototypes}, which is a declaration of the
 Arguments to a function with a prototype are implicitly converted to the types of the corresponding parameters. If the function does not have a prototype, the \emph{default argument promotions} are used, in which expressions of type \inlinecode{char} or \inlinecode{short int} are automatically promoted to \inlinecode{int}.
 
 \item[Variadic functions]
-Some functions take a variable number of arguments, for instance \inlinecode{printf}. These are usually called \emph{variadic} functions, though this terminology is not found in the C11 standard. According to \emph{\href{https://www.gnu.org/software/libc/manual/html_node/Variadic-Prototypes.html}{The GNU C Library Reference Manual}}, a variadic function must be declared with a prototype that says that it is variadic, which is done with an ellipsis \inlinecode{...} appearing last in the parameter list, following at least one named parameter. Arguments corresponding to the ellipsis seem to be referred to as \emph{variadic arguments}, but this also does not seem to be an official term.
+Some functions take a variable number of arguments, for instance \inlinecode{printf}. These are usually called \emph{variadic} functions, though this terminology is not found in the C11 standard. According to \emph{\href{https://www.gnu.org/software/libc/manual/html_node/Variadic-Prototypes.html}{The GNU C Library Reference Manual}}, a variadic function must be declared with a prototype that says that it is variadic, which is done with an ellipsis \enquote{\inlinecode{...}} appearing last in the parameter list, following at least one named parameter. Arguments corresponding to the ellipsis seem to be referred to as \emph{variadic arguments}, but this also does not seem to be an official term.
 
 Arguments corresponding to the named parameters of a variadic function (which has a prototype) are implicitly converted as with non-variadic functions, and the variadic arguments undergo default argument promotion (C11, 6.5.2.2, p. 7).
 
@@ -698,10 +707,75 @@ If we wish to print a value of type \inlinecode{size_t}, we therefore use the le
 \item[Printing pointers]
 Note that the conversion specifier \inlinecode{p} expects a value of type \inlinecode{void*} (see C11, 7.21.6.1, p. 8). Strictly speaking, giving as argument to \inlinecode{printf} another type of pointer, e.g. \inlinecode{int*}, results in undefined behaviour, and hence is implementation-dependent. A warning is produced if compiled with the flag \inlinecode{-Wpedantic}. So, again strictly speaking, casting to \inlinecode{void*} is required but it is not usually necessary in practice. [TODO: Has something to do with POSIX?] (Note, however, that casting to and from \inlinecode{void*} more generally is done implicitly.)
 
-The reason this is necessary is that the C standard does not require that pointer types have the same size or representation.\footnote{What is true is that pointers to \emph{compatible} types have the same representation, see C11, 6.2.5 p. 28.} In practice a \inlinecode{void*} and an \inlinecode{int*} have the same size (for instance 64 bits on a 64-bit machine) and are represented in the same way, but the standard does require this, and there is no guarantee that this will not change in the future. And even if they were practically identical, there is no guarantee that the compiler will treat them the same.
+The reason this is necessary is that the C standard does not require that pointer types have the same size or representation.\footnote{What is true is that pointers to \emph{compatible} types have the same representation, see C11, 6.2.5 p. 28.} In practice a \inlinecode{void*} and an \inlinecode{int*} have the same size (for instance 64 bits on a 64-bit machine) and are represented in the same way, but the standard does not require this, and there is no guarantee that this will not change in the future. And even if they were practically identical, there is no guarantee that the compiler will treat them the same.
 
 \item[Double pointers]
 Since a pointer has a memory address, one can also consider pointers to pointers, denoted by two asterisks \inlinecode{**}. But there is nothing special about these objects, they are just pointers to a type that happens to itself be a pointer type.
+
+\item[Incomplete types] [TODO]
+
+\item[Structs]
+We distinguish between \emph{defining} and \emph{declaring} structs. The minimal syntax for defining a struct is
+%
+\begin{displayquote}
+    \lstinline|struct {};|
+\end{displayquote}
+%
+This defines a struct with no name, so it cannot be used subsequently. There is really no reason to do this. We may also give the struct a name, e.g.
+%
+\begin{displayquote}
+    \lstinline|struct s {};|
+\end{displayquote}
+%
+which defines a struct with the name \inlinecode{s}. To declare a variable of this type we write
+%
+\begin{displayquote}
+    \lstinline{struct s t;}
+\end{displayquote}
+%
+We may also use the struct definition immediately when declaring a variable:
+%
+\begin{displayquote}
+    \lstinline|struct {} t;|
+\end{displayquote}
+%
+In this case it can make sense not to give the struct a name, but this precludes us from declaring other variables of the same type. We may instead give the struct a name \emph{and} declare the variable \inlinecode{t} with the corresponding type in the same declaration:
+%
+\begin{displayquote}
+    \lstinline|struct s {} t;|
+\end{displayquote}
+%
+The braces in all of the above cases may of course contain variable declarations and so on as usual. Members of incomplete types are not allowed.
+
+After the struct has been named it has incomplete type: it is only when the entire struct definition is complete that it has complete type. Since the variable declarations inside a struct definition do not allow incomplete types, the following is \emph{not} allowed:
+%
+\begin{displayquote}
+    \lstinline|struct s { struct s t; };|
+\end{displayquote}
+%
+However, pointers to incomplete types \emph{are} allowed, so the following is legal:
+%
+\begin{displayquote}
+    \lstinline|struct s { struct s *p; };|
+\end{displayquote}
+%
+Hence it is possible to create (effectively) recursive structs.
+
+Instead of defining a struct we may also \emph{declare} it. A declaration on the form
+%
+\begin{displayquote}
+    \lstinline{struct s;}
+\end{displayquote}
+%
+is called a \emph{forward declaration}. This declares \inlinecode{s} as a new struct name in the scope (hiding any previously declared meaning for the name), but it does not define it. Until it has been defined, using the syntax above, the struct name has incomplete type. This syntax is useful in defining mutually recursive structs, e.g.
+%
+\begin{displayquote}
+    \lstinline|struct r;| \\
+    \lstinline|struct s { struct r *p; };| \\
+    \lstinline|struct r { struct s *q; };|
+\end{displayquote}
+%
+Notice that the definition of the struct \inlinecode{s} is legal since \emph{pointers} to incomplete types are legal in struct definitions. Compare also function prototypes mentioned above.
 \end{notelist}
 
 \end{document}
