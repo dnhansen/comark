@@ -10,7 +10,7 @@ Before considering how to represent actual numbers using bits, we first consider
 
 Hence we instead use binary strings to represent *residue classes* of numbers. This choice will turn out to make arithmetic operations performed on a computer make sense. Furthermore, since there are $2^k$ possible binary strings of length $k$, it seems reasonable to associate to each such string a congruence class modulo $2^k$, i.e. an element of $\mathbb{Z}/2^{k}\mathbb{Z}$.
 
-Before proceeding, we introduce some notation: If $[n]$ is a residue class modulo $2^k$, then we denote by $\mathrm{unsigned}([n])$ the unique residue $r \in [0,2^{k}-1]$ such that $[r] = [n]$. We call this the **unsigned interpretation** of $[n]$. Similarly, we denote by $\mathrm{signed}([n])$ the unique residue $r \in [2^{k-1},2^{k-1}-1]$ such that $[r] = [n]$, and call this the **signed interpretation** of $[n]$.
+Before proceeding, we introduce some notation: If $[n]$ is a residue class modulo $2^k$, then we denote by $\mathrm{unsigned}([n])$ the unique residue $r \in [0,2^{k}-1]$ such that $[r] = [n]$. We call this the **unsigned interpretation** of $[n]$. Similarly, we denote by $\mathrm{signed}([n])$ the unique residue $r \in [-2^{k-1},2^{k-1}-1]$ such that $[r] = [n]$, and call this the **signed interpretation** of $[n]$.
 
 Next we must decide on a correspondence between the set $\mathbb{Z}/2^{k}\mathbb{Z}$ of residue classes, and the set $\{0,1\}^k$ of binary strings of length $k$. Define a map $\mathrm{enc}\colon \mathbb{Z}/2^{k}\mathbb{Z} \to \{0,1\}^k$ by letting
 
@@ -58,6 +58,43 @@ $$ \mathrm{enc}([-m]) = \mathrm{comp}_2(\mathrm{enc}([m])). $$
 The encoding of $[m]$ is easy to find, since it is almost certainly already stored in memory or in a register (since we wish to perform an operation on $[m]$, so it better be available to us!), and it is also easy to compute the two's complement of a binary string: Just flip all bits and add one. In practice, what usually happens is that all bits are flipped, and the lowest-order full adder in the ALU is given $1$ as a carry-in.
 
 Put another way, $\mathrm{comp}_2(a_{k-1}a_{k-2} \cdots a_0)$ is the *additive inverse* of $a_{k-1}a_{k-2} \cdots a_0$ in $\{0,1\}^k$.
+
+
+### Carry and overflow
+
+Let $[n]$ and $[m]$ be residue classes modulo $2^k$. We say that the addition $[n] + [m]$ exhibits a **carry** if
+
+$$ \mathrm{unsigned}([n] + [m]) < \mathrm{unsigned}([n]) + \mathrm{unsigned}([m]). $$
+
+Notice that the addition on the left-hand side takes place in $\mathbb{Z}/2^{k}\mathbb{Z}$, while the addition of the right-hand side takes place in $\mathbb{Z}$ (or even in $\mathbb{N}$). The above inequality could be replaced by '$\neq$', since the left-hand side is never greater than the right-hand side. It is easy to see that a carry happens precisely when
+
+$$ \mathrm{unsigned}([n]) + \mathrm{unsigned}([m]) \geq 2^k. $$
+
+In other words, when the sum of the two unsigned interpretations lies outside of the allowed range $[0,2^{k}-1]$ for unsigned values. (Recall that we *chose* to allow the unsigned interpretations of a residue class to only lie in this interval. We could just as well have *chosen* something different.)
+
+Furthermore, we say that the addition $[n] + [m]$ exhibits **overflow** if
+
+$$ \mathrm{signed}([n] + [m]) < \mathrm{signed}([n]) + \mathrm{signed}([m]), $$
+
+and that it exhibits **underflow** if
+
+$$ \mathrm{signed}([n] + [m]) > \mathrm{signed}([n]) + \mathrm{signed}([m]). $$
+
+Overflow and underflow are often grouped together and simply termed 'overflow'. In the case of overflow, this happens just when
+
+$$ \mathrm{signed}([n]) + \mathrm{signed}([m]) \geq 2^{k-1}, $$
+
+i.e. when the sum of the two signed interpretations lies *above* the allowed range $[-2^{k-1},2^{k-1}-1]$ for signed values. Notice that for overflow to happen, both signed values must be *positive*. Hence both signed values must lie in the interval $[0,2^{k-1}-1]$, and so their sum (in $\mathbb{Z}$) lies in $[0,2^k-1]$. Thus in the case of overflow, a carry cannot happen. In fact, the above says that the sum actually lies in $[2^{k-1},2^k-1]$. But taking the signed interpretation of this value yields a *negative* number.
+
+To sum up: Overflow happens when the sum of two positive signed numbers is a negative signed number. This cannot happen together with a carry.
+
+Similarly, underflow happens just when
+
+$$ \mathrm{signed}([n]) + \mathrm{signed}([m]) < -2^{k-1}, $$
+
+i.e. when the sum of the two signed interpretations lies *below* the allowed range for signed values. Opposite to the case with overflow, underflow can only happen when both signed values are *negative*, and their sum will now be *positive*. Taking the unsigned interpretation, we see that in this case a carry does occur.
+
+In total we see that overflow and carry cannot occur together, while underflow is always accompanied by a carry (though not vice-versa!).
 
 
 ## Exercises
