@@ -45,19 +45,19 @@ $$ \mathrm{enc}([0]) = \mathrm{enc}([m]) + \mathrm{enc}([-m]). $$
 
 That is, $\mathrm{enc}([-m])$ is a binary string such that when the ALU adds it to $\mathrm{enc}([m])$, we get the binary string $00 \cdots 0$ (with $k$ zeros).
 
-Consider a binary string $a_{k-1}a_{k-2} \cdots a_0$, and consider the **one's complement** of it, namely the string $\overline{a}_{k-1}\overline{a}_{k-2} \cdots \overline{a}_0$ where each bit has been flipped ($0$ changed to $1$ and vice-versa). Denote this by $\mathrm{comp}_1(a_{k-1}a_{k-2} \cdots a_0)$, and notice that
+Consider a binary string $a_{k-1}a_{k-2} \cdots a_0$, and consider the **one's complement** of it, namely the string $\overline{a}\_{k-1}\overline{a}\_{k-2} \cdots \overline{a}\_0$ where each bit has been flipped ($0$ changed to $1$ and vice-versa). Denote this by $\mathrm{comp}\_1(a\_{k-1}a\_{k-2} \cdots a\_0)$, and notice that
 
-$$ a_{k-1}a_{k-2} \cdots a_0 + \mathrm{comp}_1(a_{k-1}a_{k-2} \cdots a_0) = (a_{k-1} + \overline{a}_{k-1})(a_{k-2} + \overline{a}_{k-2}) \cdots (\overline{a}_0 + a_0), $$
+$$ a_{k-1}a_{k-2} \cdots a_0 + \mathrm{comp}\_1(a\_{k-1}a\_{k-2} \cdots a\_0) = (a_{k-1} + \overline{a}\_{k-1})(a_{k-2} + \overline{a}\_{k-2}) \cdots (\overline{a}\_0 + a\_0), $$
 
-which is just the string $11 \cdots 1$ (with $k$ ones). Hence if we simply add $1$ to $\mathrm{comp}_1(a_{k-1}a_{k-2} \cdots a_0)$, we get precisely the string we want. We call the result the **two's complement** of $a_{k-1}a_{k-2} \cdots a_0$ and denote it by $\mathrm{comp}_2(a_{k-1}a_{k-2} \cdots a_0)$.
+which is just the string $11 \cdots 1$ (with $k$ ones). Hence if we simply add $1$ to $\mathrm{comp}\_1(a\_{k-1}a\_{k-2} \cdots a\_0)$, we get precisely the string we want. We call the result the **two's complement** of $a_{k-1}a_{k-2} \cdots a_0$ and denote it by $\mathrm{comp}\_2(a\_{k-1}a\_{k-2} \cdots a\_0)$.
 
 To sum up, this shows that to find $\mathrm{enc}([-m])$, we first take the encoding of $[m]$, and then take its two's complement, i.e.
 
-$$ \mathrm{enc}([-m]) = \mathrm{comp}_2(\mathrm{enc}([m])). $$
+$$ \mathrm{enc}([-m]) = \mathrm{comp}\_2(\mathrm{enc}([m])). $$
 
 The encoding of $[m]$ is easy to find, since it is almost certainly already stored in memory or in a register (since we wish to perform an operation on $[m]$, so it better be available to us!), and it is also easy to compute the two's complement of a binary string: Just flip all bits and add one. In practice, what usually happens is that all bits are flipped, and the lowest-order full adder in the ALU is given $1$ as a carry-in.
 
-Put another way, $\mathrm{comp}_2(a_{k-1}a_{k-2} \cdots a_0)$ is the *additive inverse* of $a_{k-1}a_{k-2} \cdots a_0$ in $\{0,1\}^k$.
+Put another way, $\mathrm{comp}\_2(a_{k-1}a_{k-2} \cdots a_0)$ is the *additive inverse* of $a_{k-1}a_{k-2} \cdots a_0$ in $\{0,1\}^k$.
 
 
 ### Carry and overflow
