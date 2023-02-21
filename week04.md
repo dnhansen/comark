@@ -8,7 +8,7 @@ The exercise sheet defines **logical shifts** of binary strings. A left shift in
 
 However, just as with sign extension, we must be careful when shifting binary strings when these are interpreted as *signed* numbers. Left shifts work the same, but we introduce another kind of right shift: An **arithmetic right shift** instead inserts *either* a one or a zero to the left of the string and discards the right-most bit. If the original left-most bit is zero then a zero is inserted, and if it is one then a one is inserted. To see that this indeed does divide the corresponding signed number by two, notice that if the left-most bit of a binary string is one, then an arithmetic right shift is equivalent to taking the two's complement of the string, performing a *logical* right shift, and taking the two's complement of the result. This changes sign (which results in a binary string whose value as a signed number is positive), divides by two, and changes sign again.
 
-Both ARM and x68 assembly have instructions for both logical and arithmetic right shift.
+Both ARM and x86 assembly have instructions for both logical and arithmetic right shift.
 
 
 ## Exercises
