@@ -56,8 +56,27 @@ This may be slightly tricky. If you need a hint, notice that `R0` and `R1` conta
 
 ### Task 3
 
-I'm sure there are many solutions to this task. The one I have in mind requires realising the following, for two $k$-bit numbers $a$ and $b$:
+I'm sure there are many solutions to this task. The one I have in mind requires realising the following, for $k$-bit numbers $a$, $b$ and $c$:
 
-1. If adding $a$ and $b$ them produces carry, then that means that the result has been truncated, i.e. subtracted by $2^k$. What can we say about the size of this truncated sum in comparison to $a$ and $b$? What if there is *no* carry?
+1. If adding $a$ and $b$ them produces a carry, then that means that the result has been truncated, i.e. subtracted by $2^k$. What can we say about the size of this truncated sum in comparison to $a$ and $b$? What if there is *no* carry?
 
-2. We have a way of figuring out which of $a$ and $b$ is greater.
+2. We have a way of figuring out which of $a$ and $c$ (which is supposed to be the unsigned sum of $a$ and $b$) is greater. There are a couple of ways of doing this:
+
+#### Comparing unsigned numbers using bit manipulation (conceptually difficult but efficient)
+
+The first is to notice that it almost works to just subtract $a$ and $c$ and look at the sign of the difference. This doesn't work in all cases, since if e.g. $k = 4$, $a = 15$ and $c = 0$, then the difference $a-c$ would have a 1 as its most significant bit, hence be negative in two's complement. But if $a = 15$ and $c = 14$, then the difference would just be $1$, hence positive. And in either case $a > c$, so we can't just subtract the numbers and check the sign.
+
+However, notice that if $a$ and $c$ both have a zero as their most significant bits, then this works just fine. In this case it doesn't matter whether we interpret $a$ and $c$ as signed or unsigned. If $a > c$, then $a-c$ will lie in the interval $[1,2^{k-1}-1]$, which can be represented with $k$ bits. On the other hand, if $a \leq c$, then $a-c$ lies in the interval $[-2^{k-1},0]$, which can also be represented using $k$ bits. In this case, where the most significant bits are zero, we can just subtract the numbers and check the sign.
+
+Intermezzo: Of course, if the most significant bits of $a$ and $c$ are 0 and 1 respective (or vice versa), then it is easy to check which is greater. Hence we only need to concern us with the case where $a$ and $c$ both have a 1 as their most significant bit.
+
+Now assume that $a$ and $c$ have a 1 as their most significant bit. We then use the exercises to produce two new $k$-bit numbers $a' = a - 2^k$ and $c' = c - 2^k$ (i.e., we set the most significant bit to zero in each number). Then $a > c$ if and only if $a' > c'$, and we can just check this latter inequality.
+
+
+#### Comparing unsigned numbers using loops (conceptually easier but more difficult to code)
+
+Another way is to notice that $a > c$ if the 'distance from $0$ to $a$' is greater than the 'distance from $0$ to $c$'. The word 'distance' is supposed to mean how many times we have to increment $0$ to get $a$ (resp. $c$), or equivalently how many times we have to decrement $a$ (resp. $c$) to get $0$.
+
+A solution is thus to decrement e.g. $a$ until it either equals $c$ or $0$, both of which we know how to do from the exercises.
+
+This is clearly easier to understand, but requires implementing loops. We will spend a lot of time on loops next week (in ARM assembly), so it is not expected of you to understand how to implement loops in assembly. Incidentally, the solution also becomes less efficient, having a running time of $O(2^k)$. (Of course we are not concerned with efficiently in this course, but it is something to consider when writing assembly in production code, since we usually write assembly precisely to leverage its efficiency!)
