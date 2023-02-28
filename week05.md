@@ -26,15 +26,19 @@ We place the sum in the register `r0`, since this is the register from which the
 
 ### Task 10
 
-There is a typo in the example: The first dollar sign should not be there! To be clear, we use the command `echo $?` to print the exit code of the previous command.
+There is a typo in the example: The first dollar sign should not be there! To be clear, we use the command `echo $?` to print the exit code of the previous command. Note that it does *not* work to write something like
 
-It is apparently not easy to print numbers using assembly. Answers to [this question](https://stackoverflow.com/questions/17357467/how-to-print-a-number-in-arm-assembly) on StackOverflow indicate that using the `printf` function from the C library is the way to go. Hence we use exit codes to get an output instead.
+    ./array && echo $?
+
+Evaluation proceeds left to right and `&&` short-circuits, which means that evaluation ends when a process evaluates to something 'falsy' (since `&&` is supposed to be an AND, the entire expression is false if just one of the subexpressions is false). But a command is 'truthy' if its exit code is `0`, and 'falsy' otherwise. Since we use the exit code as output for our program, we obviously can't rely on it being `0`!
+
+In this week's hand-in we will learn how to properly print numbers!
 
 
 ## Hand-in
 
-TODO
+As mentioned above, the `write` system call takes as arguments a file descriptor (in `r0`, here standard output), the addres of the string to be printed (in `r1`), and the size in bytes of the string to be printed (in `r2`). This explains the values we place into the registers in the `single-dig.s` program.
 
-## Further reading
+Furthermore, by 'exit gracefully' we just mean that the program exits with exit code `0`, indicating that no error has occurred. Compare the `array.s` program from the exercises where the exit code would appear to indicate that an error actually had occurred!
 
-TODO
+To understand how to use the `strb` instruction, recall from the exercises how multi-byte numbers are represented on the Raspberry Pi. Why can we store the eight least significant bits of a 32-bit number?
