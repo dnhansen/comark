@@ -17,6 +17,28 @@ Similarly, the `exit` system call takes exactly one argument to be placed in `r0
 You can compare these with the system calls performed in the program `max.s` in this week's exercises.
 
 
+### Branching
+
+Simple branching is done with the `b` instruction. The syntax is
+
+    b{cond} label
+
+where `{cond}` is an optional **condition code**. If `{cond}` is omitted, the branch is unconditional.
+
+Examples of condition codes include `eq` and `ne`, which branch to `label` if the `Z` flag is set or clear, respectively. See [the documentation](https://developer.arm.com/documentation/dui0068/b/ARM-Instruction-Reference/Conditional-execution) for a complete list of condition codes.
+
+We need to specify whether an instruction should set the flags or not. Most instructions, e.g. `add` and `sub`, do not set the flag, but adding the suffix `s` makes them set the flag.
+
+For instance, the instructions
+
+    subs r1, r1, 1
+    beq zero
+
+thus subtract 1 from `r1` and branches to the label `zero` if the result is zero.
+
+The instruction [`cmp`](https://developer.arm.com/documentation/dui0068/b/ARM-Instruction-Reference/ARM-general-data-processing-instructions/CMP-and-CMN) may also be useful for comparing values.
+
+
 ## Exercises
 
 ### Task 9
