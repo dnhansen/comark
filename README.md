@@ -9,3 +9,5 @@
 - [Week 4](https://github.com/dnhansen/comark/blob/main/week04.md)
 
 - [Week 5](https://github.com/dnhansen/comark/blob/main/week05.md)
+
+- [Week 6](https://github.com/dnhansen/comark/blob/main/week06.md)
