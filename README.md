@@ -1,13 +1,13 @@
 # Computer Architecture, Operating Systems, and Networks
 
-- [Week 1](https://github.com/dnhansen/comark/blob/main/week01.md)
+- [Week 1](week01.md)
 
-- [Week 2](https://github.com/dnhansen/comark/blob/main/week02.md)
+- [Week 2](week02.md)
 
-- [Week 3](https://github.com/dnhansen/comark/blob/main/week03.md)
+- [Week 3](week03.md)
 
-- [Week 4](https://github.com/dnhansen/comark/blob/main/week04.md)
+- [Week 4](week04.md)
 
-- [Week 5](https://github.com/dnhansen/comark/blob/main/week05.md)
+- [Week 5](week05.md)
 
-- [Week 6](https://github.com/dnhansen/comark/blob/main/week06.md)
+- [Week 6](week06.md)
