@@ -2,6 +2,44 @@
 
 http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1548.pdf
 
+## Undefined and unspecified behaviour
+
+C, and most (all?) widely used programming languages in use, have a **specification**. This describes the behaviour that a C language construct must exhibit under specific circumstances. If the specification does not prescribe that a program must behave in a specific way, then the behaviour of that program is said to be **unspecified**.
+
+On the other hand, the language specification may explicitly prescribe the behaviour to be unpredictable, in which case it is called **undefined**.
+
+
+## Conversion specifications
+
+When formatting a string in C using `printf`, we use **conversion specifications**, which are strings that begin with the character `%` and are terminated by a **conversion specifier**: The C standard provides a list of legal conversion specifiers, the most common being `d` (for 'digit'), `u` (for 'unsigned'), `f` (for 'float'), and so on. The conversion specifier can be preceded by an optional **length modifier**, e.g. `l` (for long) or `z` (used when printing values of type `size_t`). The standard also describes the behaviour that the `printf` function must have when a specific conversion specifier is used with an argument of a particular type. However, the standard also prescribes that if the wrong type of argument is used, then the behaviour is undefined.
+
+The behaviour of a program in which there is a mismatch between a conversion specification and the type of an argument is thus entirely implementation dependent. Of course, any sensible implementation will do something sensible: Either give an error (on x86-64, `gcc` gives a warning when run with the option [TODO find the right option], but compilation is successful anyway), or give some sort of sensible output. If a value of type `long int` is given as argument and the corresponding conversion specification is e.g. `%d`, then it of course makes sense to print the integer anyway if it fits into an `int`.
+
+
+## Integer conversions
+
+The C standard describes the behaviour of a program when attempting to convert between different types of signed or unsigned integers. From the C99 standard:
+
+> 6.3.1.3 Signed and unsigned integers
+>
+> 1. When a value with integer type is converted to another integer type other than _Bool, if the value can be represented by the new type, it is unchanged.
+>
+> 2. Otherwise, if the new type is unsigned, the value is converted by repeatedly adding or subtracting one more than the maximum value that can be represented in the new type until the value is in the range of the new type.
+>
+> 3. Otherwise, the new type is signed and the value cannot be represented in it; either the result is implementation-defined or an implementation-defined signal is raised.
+
+Put simply: If the concrete value in question can be represented by the new type, it is unchanged. Otherwise, if the new type is unsigned then conversion is done by division with remainder. Otherwise the new type is signed, and the behaviour is implementation-dependent.
+
+
+## `sizeof` and `size_t`
+
+The keyword `sizeof` yields the size (in bytes) of its argument. *By definition*, the type of the result is `size_t` (from the `stddef.h` header file). This is an unsigned integer type used to represent the *size* of objects (so not objects themselves), for instance arrays. If we instead used e.g. `unsigned int` we might get in trouble if `int`s are 32 bits long but you are on a 64-bit machine and wish to work with objects whose size is greater than $2^{32}$. This is apparently a common problem when porting programs from 32-bit to 64-bit.
+
+Since `size_t` is its own type, it also has its own conversion specification, namely `%zu`. Here `z` is the length modifier corresponding to `size_t`, and `u` of course indicates that the value is unsigned. There is also a *signed* type corresponding to the unsigned `size_t` (with conversion specification `%zd`), but this does not get a name. A type called `ssize_t` is defined in some header files, and this is somehow supposed to be the signed version of `size_t`, but whether it is or not is implementation-dependent.
+
+As mentioned above, a mismatch between a conversion specification and the type of the argument results in undefined behaviour. I am actually unsure whether using other conversion specifications than `%zu` is valid, as long as the specification we use corresponds to a type that is at least as large as `size_t`. Some comments on StackOverflow indicate that, at least in practice, `size_t` is just a `typedef` of some other integer type, but I don't think the specification says that it must be so.
+
+
 ## Memory allocation
 
 The memory used by a C program is often said to be divided into two: the *stack*, which is used for local variables and function arguments, and the *heap*, on which we can allocate memory dynamically, perhaps if we wish to store an array larger than can fit on a stack. Running `ulimit -a` in a Bash terminal returns user limits, such as the maximum size of a program stack. Note that there is no obvious connection between *the* heap, the place in memory, and *a* heap, the data structure. This is confusing since *the* stack is certainly *a* stack.
@@ -31,20 +69,12 @@ Depending on the compiler, you might be able to call a function before it is dec
 
 The solution is to use *function prototypes*, which is a declaration of the function's return and argument types. If this is placed at the top of the file, the functions can be used when later *defining* each function. Function prototypes are recommended whether or not they are strictly necessary.
 
-### Argument promotion
 
-Arguments to a function with a prototype are implicitly converted to the types of the corresponding parameters. If the function does not have a prototype, the *default argument promotions* are used, in which expressions of type `char` or `short int` are automatically promoted to `int`.
+### Integer promotion in variadic functions
 
-### Variadic functions
+A C function that takes a variable number of arguments (e.g. `printf`) is usually called **variadic** (this term does not appear in the specification of C, but is standard nonetheless). If a value of type `char` or `short` is given as argument to a variadic function, then the value undergoes **integer promotion**: This means that it is converted to a value of type `int`. This also happens in various other circumstances in C programs, for instance in arithmetic operations. (In fact, the exact same phenomenon occurs in Java, where the type that values are converted to is known as the **promotion type**.)
 
-Some functions take a variable number of arguments, for instance `printf`. These are usually called *variadic* functions, though this terminology is not found in the C11 standard. According to [*The GNU C Library Reference Manual*](https://www.gnu.org/software/libc/manual/html_node/Variadic-Prototypes.html), a variadic function must be declared with a prototype that says that it is variadic, which is done with an ellipsis '`...`' appearing last in the parameter list, following at least one named parameter. Arguments corresponding to the ellipsis seem to be referred to as *variadic arguments*, but this also does not seem to be an official term.
-
-Arguments corresponding to the named parameters of a variadic function (which has a prototype) are implicitly converted as with non-variadic functions, and the variadic arguments undergo default argument promotion (C11, 6.5.2.2, p. 7).
-
-### The function `sizeof`
-The function `sizeof` has the return type `size_t`, which is specifically used to represent the size of objects. It is guaranteed to be large enough to contain the size of the largest object the system can handle.
-
-If we wish to print a value of type `size_t`, we therefore use the length modifier `z` along with the conversion specifier `u`, since the value is unsigned. This only works if the compiler supports C99 (which it almost certainly does), but if it doesn't then `lu` also works. The compiler won't complain, but it is probably good style to explicitly cast to `unsigned long` before printing. (Actually, on some systems it might be necessary to use `llu`, if an `unsigned long` is not big enough to represent the largest object for the given environment.)
+This means that the length modifiers `h` and `hh` in `printf` cannot reasonably expect the corresponding argument to be of type `short` and `signed char` respectively (let's say we use the conversion specifier `d`, so the value is signed), since the argument will have been converted to an integer. Hence the value is converted to a `short` or a `signed char` before printing.
 
 
 ## Pointers
