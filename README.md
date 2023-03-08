@@ -1,5 +1,7 @@
 # Computer Architecture, Operating Systems, and Networks
 
+## Weekly notes
+
 - [Week 1](week01.md)
 
 - [Week 2](week02.md)
@@ -11,3 +13,13 @@
 - [Week 5](week05.md)
 
 - [Week 6](week06.md)
+
+## Miscellaneous notes
+
+- [Notes on assembly](assembly.md)
+
+- [Notes on `gcc`](gcc.md)
+
+- [Notes on C](c-notes.md)
+
+TODO: Factor out notes from weekly notes.
