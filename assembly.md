@@ -2,6 +2,11 @@
 
 ## ARM32 assembly
 
+### Calling conventions
+
+Recall that by the calling conventions for ARM32, the callee must save the contents of some of the registers, namely `r4`-`r8`, `r10`, `r11` (i.e. `fp`) and `r12` (i.e. `sp`), and maybe also `r9`. Note that this means that the caller must save the register `r14` (i.e. `lr`)
+
+
 ### Simple function calls
 
 Strictly speaking there is no such thing as functions in ARM (just as there are not loops, arrays, etc.). The usual way to implement function-like constructs in ARM, and in assembly in general, is simply to place a label, say `function`, at the first instruction in the body of the function. To call the function we jump to this label.
@@ -17,6 +22,7 @@ Notice that this only works because `pc` (for historical reasons) turns out to c
 We obviously don't want to remember this fact about `pc`. Instead we use the `bl` ('branch and link') instruction, which saves the correct return address in `lr` and branches to a label:
 
     bl function
+    <to be executed after returning>
 
 To return to the caller, we simply copy the content of `lr` back into `pc`:
 
@@ -29,39 +35,66 @@ To return to the caller, we simply copy the content of `lr` back into `pc`:
 In total, we call a function with the instruction `bl function`, and return with the instruction `bx lr`.
 
 
-### Calling conventions
+### Using callee-saved registers
 
-Recall that by the calling conventions for ARM32, the callee must save the contents of some of the registers, namely `r4`-`r11` (except maybe `r9`). If the callee wishes to use these registers, their values must somehow be preserved and restored before returning. This usually cannot be done by using the other registers (`r0`-`r3`) but must be done by register spilling (i.e. saving them to memory). The usual way of doing this is to push the registers to the call stack at the beginning of the function call, and then pop them before returning.
+If the callee wishes to use callee-saved registers (see [above](#calling-conventions)), their values must somehow be preserved and restored before returning. This usually cannot be done by using the other registers but must be done by register spilling (i.e. saving them to memory). The usual way of doing this is to push the registers to the call stack at the beginning of the function call, and then pop them before returning. This works first of all because the stack pointer is callee-saved, so it is preserved by function calls, and secondly because a function (again by convention) does not modify the values already on the stack when the function is called.
 
-ARM (in ARM mode as opposed to in Thumb mode) does not include push and pop instructions, though pseudo-instructions `push` and `pop` do exist. Instead we use the instructions `stmdb` and `ldmia`, which stand for '**st**ore **m**ultiple, **d**ecrement **b**efore' and '**l**oa**d** **m**ultiple, **i**ncrement **a**fter'. In fact, I personally prefer the pseudo-instructions `stmfd` and `ldmfd`, where `fd` in both cases stands for 'full descending', referring to the fact that ARM's call stack is a full descending stack (i.e. it grows downwards, and the stack pointer points to the lowest element as opposed to the address just beyond the lowest element). We thus do something like:
+ARM (in ARM mode as opposed to in Thumb mode) does not include explicit push and pop instructions, though pseudo-instructions `push` and `pop` do exist. Instead we use the instructions `stmdb` and `ldmia`, which stand for '**st**ore **m**ultiple, **d**ecrement **b**efore' and '**l**oa**d** **m**ultiple, **i**ncrement **a**fter'. In fact, I personally prefer the pseudo-instructions `stmfd` and `ldmfd`, where `fd` in both cases stands for 'full descending', referring to the fact that ARM's call stack is a full descending stack (i.e. it grows downwards, and the stack pointer points to the lowest element as opposed to the address just beyond the lowest element). But any combination of `stmdb`/`stmfd`/`push` and `ldmia`/`stmfd`/`pop` will work. We thus do something like:
 
-    stmfd sp!, {r4-r11}
+    stmdb sp!, {<registers>}
     <function body>
-    ldmfd sp!, {r4-r11}
+    ldmia sp!, {<registers>}
     bx lr
 
-The syntax `stmfd sp!, {r4-r11}` means the following: The register `sp` is the base register containing the address at which the contents of the registers should be stored. The exclamation mark `!` means that the value of `sp` will be overwritten by the instruction. Finally, `{r4-r11}` denotes the registers to be saved. The registers are stored in sequence such that registers with lower numbers are stored at lower memory addresses. Since the stack is descending, this means that the above instruction is essentially equivalent to the instructions `push r11`, `push r8`, ..., `push r4`.
+Note that the syntax using `push`/`pop` is slightly different, in that the stack pointer is updated automatically:
+
+    push {<registers>}
+    <function body>
+    pop {<registers>}
+    bx lr
+
+Here `<registers>` is a comma-separated list of registers. The syntax `stmdb sp!, {<registers>}` means the following: The register `sp` is the base register containing the address at which the contents of the registers should be stored. The exclamation mark `!` means that the value of `sp` will be overwritten by the instruction. Finally, `{<registers>}` denotes the registers to be saved. The registers are stored in sequence such that registers with lower numbers are stored at lower memory addresses. Since the stack is descending, this means that the above instruction is essentially equivalent to pushing the elements of `registers` in reverse order.
 
 
 #### Nested function calls
 
-The above is sufficient if functions never call other functions. But if a function `f1` calls another function `f2`, then the above does not quite work: For when `f1` calls `f2` it saves the return address in `lr`, overwriting the location to which it should jump when it itself returns. Thus we need to save `lr` before calling `f2`.
+The above is sufficient if functions never call other functions. But if a function `f1` calls another function `f2`, then the above does not quite work: For when `f1` calls `f2` it saves the return address in `lr`, overwriting the location to which it should jump when it itself returns. Thus we need to save `lr` before calling `f2` (indeed, recall from [above](#calling-conventions) that `lr` is caller-saved).
 
 We can simply save `lr` on the stack. The function `f1` will then look as follows:
 
-    stmfd sp!, {r4-r11, lr}
+    stmdb sp!, {<registers>, lr}
     <function body>
-    ldmfd sp!, {r4-r11, lr}
+    ldmia sp!, {<registers>, lr}
     bx lr
 
 Of course we omit saving any registers we do not need to save. In particular, if `f1` calls another function but does not need to save any registers, we can simply do:
 
-    stmfd sp!, {lr}
+    stmdb sp!, {lr}
     <function body>
-    ldmfd sp!, {lr}
+    ldmia sp!, {lr}
     bx lr
 
 
 ### Stack frames
 
-Finally, we also wish to store local variables on the stack. Since the stack can thus grow and shrink during the execution of a function, we need a fixed reference point to keep track of where data is. We do this using a **frame pointer**, saved in register `fp` (`r11`). While a function is responsible for saving its own link register, it is the callee that must preserve the frame pointer of the caller. Thus TODO
+Finally, we also wish to store local variables on the stack. As above we rely on the fact that functions do not modify the stack, except by pushing elements and popping those same elements. Thus by decrementing (since the stack is descending) the stack pointer `sp` we may allocate memory in which to store local variables. Notice that if we, after saving `lr` and various callee-saved registers, decrement `sp` by $4n$, this allocates space for $n$ local variables with addresses `sp`, `sp + 4`, ..., `sp + 4*n`. Appropriately incrementing `sp` before returning then frees the memory again.
+
+This is sufficient to store and use local variables on the stack. But since the stack may grow and shrink during the execution of the function, it is fairly tricky to use. Instead we store in `r11` (i.e. `fp`) a so-called **frame pointer**, which points to somewhere at the base of the function's stack frame. It does not matter precisely where it points to, but it customarily points to the location at which the function's return address (i.e. the value of `lr`) is stored.
+
+However, [recall](#calling-conventions) that `r11` is a callee-saved register. Thus before overwriting `fp`, the old value must be stored somewhere. It is again immaterial precisely where it is stored as long as it is restored upon returning, but it is usually stored immediately below the return address (i.e. at address `fp - 4`, following the above convention).
+
+In total, we obtain the following picture of the stack, from the point of view of the callee:
+
+    ...
+    <caller's stack frame>
+    lr                          <- fp
+    <caller's fp>
+    <callee-saved register>
+    ...
+    <callee-saved register>
+    <local variable>
+    ...
+    <local variable>            <- sp
+    <non-allocated memory>
+
+TODO: How to access non-local variables?
