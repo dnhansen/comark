@@ -2,12 +2,35 @@
 
 ## ARM32 assembly
 
-### Calling conventions
+### Branching
+
+Simple branching is done with the `b` instruction. The syntax is
+
+    b{cond} label
+
+where `{cond}` is an optional **condition code**. If `{cond}` is omitted, the branch is unconditional.
+
+Examples of condition codes include `eq` and `ne`, which branch to `label` if the `Z` flag is set or clear, respectively. See [the documentation](https://developer.arm.com/documentation/dui0068/b/ARM-Instruction-Reference/Conditional-execution) for a complete list of condition codes.
+
+We need to specify whether an instruction should set the flags or not. Most instructions, e.g. `add` and `sub`, do not set the flag, but adding the suffix `s` makes them set the flag.
+
+For instance, the instructions
+
+    subs r1, r1, 1
+    beq zero
+
+thus subtract 1 from `r1` and branches to the label `zero` if the result is zero.
+
+The instruction [`cmp`](https://developer.arm.com/documentation/dui0068/b/ARM-Instruction-Reference/ARM-general-data-processing-instructions/CMP-and-CMN) may also be useful for comparing values.
+
+
+### Function calls
+
+#### Calling conventions
 
 Recall that by the calling conventions for ARM32, the callee must save the contents of some of the registers, namely `r4`-`r8`, `r10`, `r11` (i.e. `fp`) and `r12` (i.e. `sp`), and maybe also `r9`. Note that this means that the caller must save the register `r14` (i.e. `lr`)
 
-
-### Simple function calls
+#### Simple function calls
 
 Strictly speaking there is no such thing as functions in ARM (just as there are not loops, arrays, etc.). The usual way to implement function-like constructs in ARM, and in assembly in general, is simply to place a label, say `function`, at the first instruction in the body of the function. To call the function we jump to this label.
 
@@ -98,3 +121,16 @@ In total, we obtain the following picture of the stack, from the point of view o
     <non-allocated memory>
 
 TODO: How to access non-local variables?
+
+
+### System calls
+
+We will see system calls again later when we study operating systems in more detail. A **system call** is a function that asks the operating system for a particular service, like writing to or reading from a file, exiting a program, creating or removing directories, updating access permissions, and so on.
+
+On the Linux manual page for the [`syscall`](https://man7.org/linux/man-pages/man2/syscall.2.html) function we can see the **calling conventions** for different kinds of architectures. The Raspberry Pi uses arm/EABI (to see this, consider the output of the `readelf -h max` command, so to perform a system call we use the instruction `swi 0x0` (`swi` for 'SoftWare Interrupt'). Note that `swi` is equivalent to the instruction `svc` (for 'SuperVisor Call') used by the Unified Assembler Language (UAL). The table also indicates which register should be used to specify the system call (which on arm/EABI is `r7`), and which registers receive return values or error values.
+
+Looking at [a list of system calls](https://chromium.googlesource.com/chromiumos/docs/+/HEAD/constants/syscalls.md#arm-32_bit_eabi), we see that the code for the `write` system call is `0x04`, and that the code for the `exit` system call is `0x01`. The table also specifies in which registers arguments to the system call should be placed. For instance, the arguments to `write` should be placed in registers `r0`, `r1` and `r2`.
+
+Furthermore, looking at the manual page for the [`write`](https://man7.org/linux/man-pages/man2/write.2.html) system call, we see what each argument does: The first argument `fd` is a **file descriptor**. On Linux many things are modelled using files, for instance standard I/O. Hence the standard output also gets a file descriptor, and it is always given the descriptor `1`. The argument `buf` is a pointer to the string to be printed, and `count` is the size of the string.
+
+Similarly, the `exit` system call takes exactly one argument to be placed in `r0`, namely the exit code (which is usually `0` when no error has occurred, and something else when an error has in fact occurred, the code depending on the error).
