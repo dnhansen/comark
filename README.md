@@ -22,4 +22,6 @@
 
 - [Notes on C](c-notes.md)
 
+- [Notes on modular and computer arithmetic](arithmetic-notes.md)
+
 TODO: Factor out notes from weekly notes.
