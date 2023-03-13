@@ -58,7 +58,7 @@ To return to the caller, we simply copy the content of `lr` back into `pc`:
 In total, we call a function with the instruction `bl function`, and return with the instruction `bx lr`.
 
 
-### Using callee-saved registers
+#### Using callee-saved registers
 
 If the callee wishes to use callee-saved registers (see [above](#calling-conventions)), their values must somehow be preserved and restored before returning. This usually cannot be done by using the other registers but must be done by register spilling (i.e. saving them to memory). The usual way of doing this is to push the registers to the call stack at the beginning of the function call, and then pop them before returning. This works first of all because the stack pointer is callee-saved, so it is preserved by function calls, and secondly because a function (again by convention) does not modify the values already on the stack when the function is called.
 
@@ -98,7 +98,7 @@ Of course we omit saving any registers we do not need to save. In particular, if
     bx lr
 
 
-### Stack frames
+#### Stack frames
 
 Finally, we also wish to store local variables on the stack. As above we rely on the fact that functions do not modify the stack, except by pushing elements and popping those same elements. Thus by decrementing (since the stack is descending) the stack pointer `sp` we may allocate memory in which to store local variables. Notice that if we, after saving `lr` and various callee-saved registers, decrement `sp` by $4n$, this allocates space for $n$ local variables with addresses `sp`, `sp + 4`, ..., `sp + 4*n`. Appropriately incrementing `sp` before returning then frees the memory again.
 
