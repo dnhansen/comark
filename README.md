@@ -14,6 +14,8 @@
 
 - [Week 6](week06.md)
 
+- [Week 7](week07.md)
+
 ## Miscellaneous notes
 
 - [Notes on assembly](assembly.md)
