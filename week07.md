@@ -42,19 +42,31 @@ Again despite Peyman's words, arrays and pointers are *not* the same, even if th
 
     a[b] == *(a + b)
 
-And indeed, arrays as often implicitly converted to pointers:
+And indeed, arrays are often implicitly converted to pointers:
 
 > Except when it is the operand of the `sizeof` operator or the unary `&` operator, or is a
 string literal used to initialize an array, an expression that has type "array of *type*" is
 converted to an expression with type "pointer to *type*" that points to the initial element of
 the array object and is not an lvalue. (C2011, 6.3.2.1, p.3)
 
-This is sometimes referred to as **array decay** or **array to pointer decay**. For an example of this phenomenon, consider the following code:
+This is sometimes referred to as **array decay** or **array to pointer decay**. For an example of the difference between arrays and pointers, consider the following code:
 
     int a[10];
     int *b = a;
     printf("%zu\n", sizeof(a)); // prints "40"
     printf("%zu\n", sizeof(b)); // prints "8"
+
+The array-pointer equivalence sometimes leads to surprising, but legal, programs. In the snippet
+
+    int a[] = {0,1,2};
+    int x = a[2];
+
+obviously `x` will contain the value `2`. However, it turns out that the following is also possible:
+
+    int a[] = {0,1,2};
+    int x = 2[a];
+
+Array-pointer equivalence tells us that `a[2] == *(a + 2)` and supposedly also that `2[a] == *(2 + a)`. Addition is only defined between two numbers, or between a number [TODO presumably only integers?] and a pointer. But notice that it is necessary for the compiler to know which of the operands `2` and `a` is a pointer, since it must add `2 * sizeof(int)` to `a` to obtain the address of the element in `a` with index `2`. Compare also pointer arithmetic, where we do not need to take the size of elements into account, and assembly, where we do.
 
 
 ### Pointers to functions
