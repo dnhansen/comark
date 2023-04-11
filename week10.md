@@ -26,6 +26,10 @@ Note that running the `ps` command without the `-l` flag will also show the `TIM
 
 The `-pthread` flag to `gcc` is necessary on the Raspberry Pi, and it is apparently supposed to be necessary on all platforms. (On my own Linux VM, however, I am able to compile C-programs using the POSIX Threads API without this flag. Who knows why!)
 
+Note that we cast to `intptr_t` and so on for simplicity. It is often done in practice, but the `intptr_t` type (and its corresponding untyped version `uintptr_t`) are not required by the C standard. If you need to write portable code, it is recommended to allocate (either dynamically or on the stack, if this is possible) a piece of memory and pass a pointer to the child.
+
+Note also that we have to be careful when passing a pointer to `child_function`, since if we pass the same pointer to multiple children, then the pointer, along with the value stored at the pointer, will be shared by all children.
+
 
 ### Task 8
 
@@ -41,7 +45,10 @@ Apparently the system call `brk` returns the location of the (current or new) br
 
 ## Hand-in
 
-TODO
+The provided source code defines its own Boolean type. In fact the C standard library provides one in the `<stdbool.h>` header file, which we might as well have included instead.
+
+See also [my notes](c-notes.md#the-posix-thread-api) on the POSIX Thread API for information on threads.
+
 
 ## Further reading
 

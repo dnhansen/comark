@@ -143,3 +143,83 @@ is called a *forward declaration*. This declares `s` as a new struct name in the
     struct r { struct s *q; };
 
 Notice that the definition of the struct `s` is legal since *pointers* to incomplete types are legal in struct definitions. Compare also function prototypes mentioned above.
+
+
+## The POSIX Thread API
+
+### Passing arguments to threads
+
+Recall the signature of the [`pthread_create`(3)](https://man7.org/linux/man-pages/man3/pthread_create.3.html) function:
+
+    int pthread_create(pthread_t *restrict thread,
+                       const pthread_attr_t *restrict attr,
+                       void *(*start_routine)(void *),
+                       void *restrict arg);
+
+The function `start_routine` thus takes as its only parameter an object of type `void*`, which it passed through the `arg` parameter.
+
+
+#### Naive conversion to `void*`
+
+If we wish to e.g. pass an integer `i` to `start_routine`, it is tempting to pass a pointer `&i`. This may be fine, but one has to be aware of the following:
+
+- If it is allocated on the stack, it will be freed when the calling thread terminates.
+- If `&i` is passed to multiple threads, then every such thread may modify the value located at the address `&i`. This is usually not the intended behaviour.
+
+Another approach is to simply cast `i` to a `void*` and pass this. The C standard e.g. allows integer constant expressions with value `0` to be cast to `void*` to obtain a **null pointer** (C11, 6.3.2.3, p.3). However, apart from this things are less clear:
+
+> An integer may be converted to any pointer type. Except as previously specified, the result is implementation-defined, might not be correctly aligned, might not point to an entity of the referenced type, and might be a trap representation. (C11, 6.3.2.3, p.5)
+
+And conversely:
+
+> Any pointer type may be converted to an integer type. Except as previously specified, the result is implementation-defined. (C11, 6.3.2.3, p.6)
+
+We run into implementation-defined behaviour, which we would like to avoid.
+
+
+#### Using `intptr_t`
+
+Another common attempt is to use the signed integer type `intptr_t` and its unsigned counterpart `uintptr_t` defined in the header file `<stdint.h>`. The standard (C11, 7.20.2.4) specifies that `intptr_t` must be able to contain values between $-(2^{15}-1)$ to $2^{15}-1$ (the value $-2^{15}$ is not required to accomodate e.g. one's complement representation of signed integers), and `uintptr_t` must be able to contain values up to $2^{16}-1$.
+
+The standard futhermore specifies the following:
+
+> [`intptr_t`] designates a signed integer type with the property that any valid pointer to `void` can be converted to this type, then converted back to pointer to `void`, and the result will compare equal to the original pointer. (C11, 7.20.1.4)
+
+So the standard at least gives us some guarantees when converting to and from `void` pointers. We would then perform a cast like
+
+    (void*)(intptr_t)i
+
+and pass the result as the `arg` parameter of `pthread_create`.
+
+However, we run into the following problems:
+
+- The types `intptr_t` and `uintptr_t` are optional (C11, 7.20.1.4). So there are no guarantees in case we want to write portable code.
+- The standard only specifies the *minimum* size of the type, namely as 16-bit integers. Since we are able to perform a conversion `void*` -> `intptr_t` -> `void*` without losing information, `intptr_t` must be able to contain every pointer to `void`. However, the standard gives us *no* guarantee that the converse is the case, i.e. that we can perform a conversion `intptr_t` -> `void*` -> `intptr_t`. In other words, `intptr_t` may be a much larger type than `void*`. But notice that this latter conversion is precisely the one we wish to perform!
+- We would like to convert from `intptr_t` to some concrete integer type, e.g. to print it. Since there is no guaranteed upper bound on the size of `intptr_t`, this is difficult. [Recall](#integer-conversions) that converting to signed integer types can be problematic, and at best converting to unsigned integer types can lose information if they are not large enough. This is less of a problem in our use case since we of course know the original type of the argument and can write `start_routine` accordingly, but it is one more thing to be careful of.
+
+In short, this approach is less than ideal.
+
+
+#### Carefully passing pointers
+
+TODO converting to and from `void*`.
+
+The usual approach is to somehow (either on the stack or on the heap) allocate memory for the object to be passed, and then being very careful about not passing the same pointer to multiple threads. If one e.g. has a loop that creates threads, one may first create an array to contain the arguments to each thread, and then iterate through this array.
+
+If the arguments are allocated on the stack, one must (as mentioned above) be very careful that the parent thread does not exit before the child does. There are various ways of ensuring this (e.g. using semaphores), but the POSIX Thread API provides the `pthread_join` function which may be used for this purpose.
+
+See TODO for a working example of this.
+
+
+### Passing multiple arguments
+
+The function `start_routine` only has one parameter, so we cannot immediately pass multiple arguments to it. Of course this should be no hindrance. After all, mathematical functions (at least in the usual conception of functions in mathematics) only take one argument, but that argument may be a tuple.
+
+The usual way of accomplishing this is by declaring a struct to hold the arguments. For instance,
+
+    typedef struct args_st {
+        int arg1;
+        int arg2;
+    } args_t;
+
+defines the type `args_t` as a struct type with fields `arg1` and `arg2` of type `int`. One may then allocate such structs and pass pointers to them to `pthread_create`. Each child can then free the memory themselves.
