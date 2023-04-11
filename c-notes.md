@@ -122,7 +122,7 @@ In this case it can make sense not to give the struct a name, but this precludes
 
 The braces in all of the above cases may of course contain variable declarations and so on as usual. Members of incomplete types are not allowed.
 
-After the struct has been named it has incomplete type: it is only when the entire struct definition is complete that it has complete type. Since the variable declarations inside a struct definition do not allow incomplete types, the following is \emph{not} allowed:
+After the struct has been named it has incomplete type: it is only when the entire struct definition is complete that it has complete type. Since the variable declarations inside a struct definition do not allow incomplete types, the following is *not* allowed:
 
     struct s { struct s t; };
 
