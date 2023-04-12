@@ -36,11 +36,29 @@ Note also that we have to be careful when passing a pointer to `child_function`,
 On my machine, redirecting standard out somehow represses (some of) the `write` system calls, at least in the standard error output of `strace`. If you experience something similar, try omitting the redirect.
 
 
+### Task 9
+
+The [`mmap2`(2)](https://man7.org/linux/man-pages/man2/mmap2.2.html) system call is provided by the Linux kernel and supersedes the system call `mmap`. The GNU C Library (glibc) provides a wrapper function [`mmap`(2)](https://man7.org/linux/man-pages/man2/mmap.2.html) which is usually called instead when available (which it obviously isn't on non-GNU systems!).
+
+
+### Task 10
+
+The [source code](https://elixir.bootlin.com/glibc/glibc-2.28/source/malloc/malloc.c#L1058) for the [`malloc`(3)](https://man7.org/linux/man-pages/man3/malloc.3.html) function in the GNU C Library describes the layout of free and allocated memory chunks. (The command `ldd --version` prints the version of glibc we are using, which is version 2.28. That is, Peyman links to an older version which has slightly different behaviour.)
+
+Essentially, `malloc` allocates an extra two words immediately before the block of memory available to the user. The second word contains the size of the chunk in bytes. From the [source code](https://elixir.bootlin.com/glibc/glibc-2.28/source/malloc/malloc.c#L1174) it is also fairly easy to convince oneself [TODO: Write something about struct alignment and offsets?] that the minimum chunk size is at least 16, so the three least significant bits of the chunk size are zero. Hence we may use these bits to store bit flags.
+
+When you access `A[-1]` you will notice that its value is (always?) 2 larger than the actual size of the allocated chunk, since the second bit is set. This indicates that the chunk was allocated using `mmap`, which indeed it was.
+
+The first word contains the size of the previous chunk, which apparently turns out to be 0 (for reasons I don't understand).
+
+NOTE: Using array indices to access values outside of an array yields undefined behaviour [TODO: or implementation-defined behaviour?], so don't actually do this.
+
+
 ### Task 12
 
-It is sufficient to execute the command `man brk` since there is no `man 1 brk`. It is perhaps useful to also take a look at the 'NOTES' section, in particular the subsection 'C library/kernel differences'.
+It is sufficient to execute the command `man brk` since there is no `man 1 brk`. It is perhaps useful to also take a look at the ['NOTES' section](https://man7.org/linux/man-pages/man2/brk.2.html#NOTES) of the manual page, in particular the subsection 'C library/kernel differences'.
 
-Apparently the system call `brk` returns the location of the (current or new) break point, while there is a wrapper which returns the status code as described. Since `strace` prints the return value of the system call itself, we can use it to see the break point.
+As with `mmap` there is both a system call `brk` and a wrapper function of the same name provided by the GNU C Library. The *system call* returns the location of the (current or new) break point, the *wrapper* returns the status code as described. Since `strace` prints the return value of the system call itself, we can use it to see the break point.
 
 
 ## Hand-in
