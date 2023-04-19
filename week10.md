@@ -67,6 +67,20 @@ The provided source code defines its own Boolean type. In fact the C standard li
 
 See also [my notes](c-notes.md#the-posix-thread-api) on the POSIX Thread API for information on threads.
 
+A hint recommends defining a struct such as
+
+    typedef struct work_st { /* ... */ } work_t; 
+
+The suffix `_st` is often used for structs, and the suffix `_t` for various types. However, while the former is harmless, one has to be careful when declaring types ending in `_t`. First of all, from the [C standard](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf):
+
+> Typedef names beginning with `int` or `uint` and ending with `_t` may be added to the types defined in the `<stdint.h>` header. (C11, 7.31.10)
+
+In other words, one should avoid declaring types beginning with `int` or `uint` and ending with `_t`, since these may be added to the C standard in the future. This is obviously not an issue here, but the [POSIX standard](https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xsh_chap02.html#tag_22_02_12) says the following:
+
+> To allow implementors to provide their own types, all conforming applications are required to avoid symbols ending in "_t", which permits the implementor to provide additional types.
+
+That is, if one aims for POSIX compliance, then one should avoid declaring types ending in `_t`.
+
 
 ## Further reading
 
