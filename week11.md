@@ -6,7 +6,7 @@ TODO
 
 ## Exercises
 
-See the [manual pages](https://man7.org/linux/man-pages/man1/scp.1.html) for more information on the `scp` command. (Note that if you are on Windows, you have probably installed OpenSSH, so the manual page is also valid on Windows.)
+See the [manual pages](https://man7.org/linux/man-pages/man1/scp.1.html) for more information on the `scp` command. (Note that if you are on Windows you have probably installed OpenSSH, so the manual page is also valid on Windows.)
 
 
 ### Task 3
