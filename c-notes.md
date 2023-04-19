@@ -1,6 +1,6 @@
 # C notes
 
-http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1548.pdf
+https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
 
 ## Undefined and unspecified behaviour
 
