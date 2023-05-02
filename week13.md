@@ -1,10 +1,5 @@
 # Week 13 (calendar week 18)
 
-## General notes
-
-TODO
-
-
 ## Exercises
 
 ### Task 2
@@ -56,4 +51,4 @@ No hand-in this week.
 
 ## Further reading
 
-TODO
+For more on how virtual machines deal with networking, the [VirtualBox manual](https://www.virtualbox.org/manual/ch06.html) covers many topics that are relevant for other virtualisation software packages such as QEMU and VMWare Workstation (Player).
