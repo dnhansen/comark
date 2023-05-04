@@ -4,6 +4,10 @@
 
 ### Task 2
 
+On Mac, port 5000 may already be used, so you need to choose a different one (5001 should work).
+
+On Windows, remember to add `.exe` after the command `qemu-system-aarch64`.
+
 When running `ifconfig` (or `ip addr`) I variously see the interface `eth0` or an interface called `usb0`. I am not quite sure why.
 
 (On my personal Ubuntu VM the corresponding interface is called `enp0s3`. Apparently this [has something to do](https://askubuntu.com/questions/704035/no-eth0-listed-in-ifconfig-a-only-enp0s3-and-lo) with the [systemd](https://wiki.debian.org/systemd) manager that Debian, on which both Ubuntu and Raspberry Pi OS are based, uses.)
@@ -46,7 +50,7 @@ In the tunneling hand-in the desired behaviour is slightly different, so don't b
 
 ## Hand-in
 
-No hand-in this week.
+No hand-in this week. (For notes on hand-in 9, see [week 14](week14.md#hand-in).)
 
 
 ## Further reading
