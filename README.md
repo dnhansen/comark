@@ -28,6 +28,8 @@
 
 - [Week 13](week13.md)
 
+- [Week 14](week14.md)
+
 ## Miscellaneous notes
 
 - [Notes on assembly](assembly.md)
