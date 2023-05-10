@@ -1,10 +1,8 @@
 # Week 14 (calendar week 19)
 
-## Exercises
-
-TODO
-
 ## Hand-in
+
+See [my notes](javasockets.md) on socket programming in Java.
 
 ### Task 1
 
